@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)/bin</OutDir>
+    <IntDir>$(SolutionDir)/obj/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <TargetName>$(ProjectName)-$(Platform)-$(Configuration)-$(PlatformToolset)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SPEHSENGINE_ROOT)/;$(SPEHSENGINE_ROOT)/Dependencies/include/;$(SPEHSENGINE_ROOT)/Dependencies/include/freetype/;$(SolutionDir)/</AdditionalIncludeDirectories>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)/bin/;$(SolutionDir)/Dependencies/lib/;$(SPEHSENGINE_ROOT)/Dependencies/lib/$(Platform)/;$(SPEHSENGINE_ROOT)/Dependencies/lib/$(Platform)/$(Configuration)/;$(SPEHSENGINE_ROOT)/bin/$(Platform)/$(Configuration)/$(PlatformToolset)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SpehsAudio.lib;SpehsCore.lib;SpehsMath.lib;SpehsPhysics.lib;SpehsInput.lib;SpehsRendering.lib;SpehsGUI.lib;SpehsNet.lib;SpehsDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
