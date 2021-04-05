@@ -4,6 +4,7 @@
 #include "SpehsEngine/Core/CoreLib.h"
 #include "SpehsEngine/Core/DeltaTimeSystem.h"
 #include "SpehsEngine/Core/StringOperations.h"
+#include "SpehsEngine/Core/StringUtilityFunctions.h"
 #include "SpehsEngine/Core/Inifile.h"
 #include "SpehsEngine/Core/Console.h"
 #include "SpehsEngine/Core/Thread.h"
@@ -24,14 +25,15 @@
 #include "SpehsEngine/Input/InputManager.h"
 #include "SpehsEngine/Input/EventCatcher.h"
 #include "SpehsEngine/Input/EventSignaler.h"
+#include "SpehsEngine/ImGui/Utility/BackendWrapper.h"
 #include "SpehsEngine/Physics/PhysicsLib.h"
 #include "SpehsEngine/GUI/GUILib.h"
 #include "SpehsEngine/GUI/GUIRectangle.h"
 #include "SpehsEngine/Debug/DebugLib.h"
-#include "SpehsEngine/Debug/ConnectionProfiler.h"
 #include "SpehsEngine/Debug/ScopeProfilerVisualizer.h"
+#include "SpehsEngine/Debug/ConnectionManagerVisualizer.h"
 #include <thread>
-
+#pragma optimize("", off)
 
 int main()
 {
@@ -50,7 +52,7 @@ int main()
 	se::Inivar<unsigned>& windowWidth = inifile.get("video", "window_width", 800u);
 	se::Inivar<unsigned>& windowHeight = inifile.get("video", "window_height", 900u);
 	se::Inivar<unsigned>& limitFps = inifile.get("video", "limit_fps", 60u);
-	const se::net::Port port(inifile.get("network", "port", uint16_t(41666)));
+	const se::net::Port port(inifile.get("network", "port", uint16_t(41667)));
 	inifile.write();
 	
 	const se::time::Time minFrameTime = se::time::fromSeconds(1.0f / float(limitFps));
@@ -70,9 +72,11 @@ int main()
 	se::input::EventSignaler eventSignaler;
 	se::time::DeltaTimeSystem deltaTimeSystem;
 	se::GUIContext guiContext(batchManager2D, inputManager, deltaTimeSystem);
+	se::imgui::BackendWrapper imGuiBackendWrapper(window, eventSignaler, 0);
 
 	se::net::IOService ioService;
 	se::net::ConnectionManager connectionManager(ioService, "server");
+	se::debug::ConnectionManagerVisualizer connectionManagerVisualizer(connectionManager, imGuiBackendWrapper, true);
 	se::rendering::Text& text = *batchManager2D.createText();
 	text.setFont("Fonts/Anonymous.ttf", 14);
 	text.setColor(se::Color(1.0f, 1.0f, 1.0f));
@@ -86,19 +90,24 @@ int main()
 	se::Console console;
 	se::rendering::ConsoleVisualizer consoleVisualizer(console, inputManager, batchManager2D);
 
-	// Connection profiler
-	se::debug::ConnectionProfiler connectionProfiler(guiContext);
-	boost::signals2::scoped_connection addToConnectionProfilerConnection;
-	connectionManager.connectToIncomingConnectionSignal(addToConnectionProfilerConnection, [&connectionProfiler](std::shared_ptr<se::net::Connection> &connection)
-		{
-			connectionProfiler.addConnection(connection);
-		});
+	// Profiler visualizer
+	se::debug::ScopeProfilerVisualizer scopeProfilerVisualizer(guiContext);
+	scopeProfilerVisualizer.setTargetRootSectionWidth(&minFrameTime);
+	scopeProfilerVisualizer.setRenderState(false);
+
+	se::net::ConnectionSimulationSettings defaultConnectionSimulationSettings;
+	defaultConnectionSimulationSettings.maximumSegmentSizeIncoming = 1500;
+	defaultConnectionSimulationSettings.maximumSegmentSizeOutgoing = 1500;
+	defaultConnectionSimulationSettings.chanceToDropIncoming = 0.15f;
+	defaultConnectionSimulationSettings.chanceToDropOutgoing = 0.15f;
+	defaultConnectionSimulationSettings.chanceToReorderReceivedPacket = 0.15f;
+	connectionManager.setDefaultConnectionSimulationSettings(defaultConnectionSimulationSettings);
 
 	connectionManager.setDebugLogLevel(1);
 	connectionManager.bind(port);
 	connectionManager.startAccepting();
 
-	if (true)
+	if (false)
 	{
 		// Continuous file transfer
 		struct Connection
@@ -115,7 +124,7 @@ int main()
 				se::log::info("Server: incoming connection accepted: " + connection->debugEndpoint);
 			});
 
-		uint64_t targetBytesPerSecond = 1024;
+		uint64_t targetBytesPerSecond = 1024 * 1024;
 		const se::time::Time sendInterval = se::time::fromSeconds(1.0f / 30.0f);
 		se::time::Time lastSendTime;
 		while (true)
@@ -150,7 +159,7 @@ int main()
 			inifile.update();
 			consoleVisualizer.update(deltaTimeSystem.deltaTime);
 			connectionManager.update();
-			connectionProfiler.update();
+			scopeProfilerVisualizer.update(deltaTimeSystem.deltaTime);
 			if (inputManager.isKeyPressed(unsigned(se::input::Key::UP)))
 			{
 				targetBytesPerSecond = targetBytesPerSecond << 1;
@@ -168,12 +177,13 @@ int main()
 				}
 			}
 			std::string string;
-			string = "Target Bps: " + std::to_string(targetBytesPerSecond);
+			string = "Target Bps: " + se::toByteString(targetBytesPerSecond);
 			text.setString(string);
 			updateTextPosition();
 
 			//Render
 			window.renderBegin();
+			imGuiBackendWrapper.render();
 			consoleVisualizer.render();
 			batchManager2D.render();
 			window.renderEnd();
@@ -222,7 +232,7 @@ int main()
 			inifile.update();
 			consoleVisualizer.update(deltaTimeSystem.deltaTime);
 			connectionManager.update();
-			connectionProfiler.update();
+			scopeProfilerVisualizer.update(deltaTimeSystem.deltaTime);
 			if (inputManager.isKeyPressed(unsigned(se::input::Key::UP)))
 			{
 				packetSize = packetSize << 1;
@@ -253,27 +263,13 @@ int main()
 				}
 			}
 			std::string string;
-			if (packetSize > 1024 * 1024 * 1024)
-			{
-				string += "\nPacket size: " + std::to_string(packetSize / (1024 * 1024 * 1024)) + " GB";
-			}
-			else if (packetSize > 1024 * 1024)
-			{
-				string += "\nPacket size: " + std::to_string(packetSize / (1024 * 1024)) + " MB";
-			}
-			else if (packetSize > 1024)
-			{
-				string += "\nPacket size: " + std::to_string(packetSize / 1024) + " KB";
-			}
-			else
-			{
-				string += "\nPacket size: " + std::to_string(packetSize) + " B";
-			}
+			string += "\nPacket size: " + se::toByteString(packetSize);
 			text.setString(string);
 			updateTextPosition();
 
 			//Render
 			window.renderBegin();
+			imGuiBackendWrapper.render();
 			consoleVisualizer.render();
 			batchManager2D.render();
 			window.renderEnd();

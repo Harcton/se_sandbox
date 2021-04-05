@@ -24,11 +24,12 @@
 #include "SpehsEngine/Input/InputManager.h"
 #include "SpehsEngine/Input/EventCatcher.h"
 #include "SpehsEngine/Input/EventSignaler.h"
+#include "SpehsEngine/ImGui/Utility/BackendWrapper.h"
 #include "SpehsEngine/Physics/PhysicsLib.h"
 #include "SpehsEngine/GUI/GUILib.h"
 #include "SpehsEngine/Debug/DebugLib.h"
-#include "SpehsEngine/Debug/ConnectionProfiler.h"
 #include "SpehsEngine/Debug/ScopeProfilerVisualizer.h"
+#include "SpehsEngine/Debug/ConnectionManagerVisualizer.h"
 #include <thread>
 
 
@@ -49,7 +50,7 @@ int main()
 	se::Inivar<unsigned>& windowHeight = inifile.get("video", "window_height", 900u);
 	se::Inivar<unsigned>& limitFps = inifile.get("video", "limit_fps", 60u);
 	const se::net::Address serverAddress(inifile.get("network", "server_address", std::string("127.0.0.1")));
-	const se::net::Port serverPort(inifile.get("network", "server_port", uint16_t(41666)));
+	const se::net::Port serverPort(inifile.get("network", "server_port", uint16_t(41667)));
 	const se::net::Endpoint serverEndpoint(serverAddress, serverPort);
 
 	const se::time::Time minFrameTime = se::time::fromSeconds(1.0f / float(limitFps));
@@ -69,29 +70,36 @@ int main()
 	se::input::EventSignaler eventSignaler;
 	se::time::DeltaTimeSystem deltaTimeSystem;
 	se::GUIContext guiContext(batchManager2D, inputManager, deltaTimeSystem);
+	se::imgui::BackendWrapper imGuiBackendWrapper(window, eventSignaler, 0);
 
 	se::net::IOService ioService;
 	se::net::ConnectionManager connectionManager(ioService, "client");
+	se::debug::ConnectionManagerVisualizer connectionManagerVisualizer(connectionManager, imGuiBackendWrapper, true);
 	std::shared_ptr<se::net::Connection> connection;
 	boost::signals2::scoped_connection connectionStatusChangedConnection;
+
+	se::net::ConnectionSimulationSettings defaultConnectionSimulationSettings;
+	defaultConnectionSimulationSettings.maximumSegmentSizeIncoming = 1500;
+	defaultConnectionSimulationSettings.maximumSegmentSizeOutgoing = 1500;
+	defaultConnectionSimulationSettings.chanceToDropIncoming = 0.15f;
+	defaultConnectionSimulationSettings.chanceToDropOutgoing = 0.15f;
+	defaultConnectionSimulationSettings.chanceToReorderReceivedPacket = 0.15f;
+	connectionManager.setDefaultConnectionSimulationSettings(defaultConnectionSimulationSettings);
 	connectionManager.setDebugLogLevel(1);
 	connectionManager.bind();
 
 	// Console
 	se::Console console;
 	se::rendering::ConsoleVisualizer consoleVisualizer(console, inputManager, batchManager2D);
-
-	// Connection profiler
-	se::debug::ConnectionProfiler connectionProfiler(guiContext);
-	connectionProfiler.setTextColor(se::Color(0.0f, 0.0f, 0.0f));
-
+	
 	// Profiler visualizer
 	se::debug::ScopeProfilerVisualizer scopeProfilerVisualizer(guiContext);
 	scopeProfilerVisualizer.setTargetRootSectionWidth(&minFrameTime);
+	scopeProfilerVisualizer.setRenderState(false);
 
 	const se::time::Time beginTime = se::time::now();
 
-	if (true)
+	if (false)
 	{
 		uint64_t dataIndex = 0u;
 		uint64_t reliableBytesReceived = 0u;
@@ -132,7 +140,6 @@ int main()
 				connection = connectionManager.startConnecting(serverEndpoint);
 				if (connection)
 				{
-					connectionProfiler.addConnection(connection);
 					connection->connectToStatusChangedSignal(connectionStatusChangedConnection, [&connection, receiveHandler](const se::net::Connection::Status oldStatus, const se::net::Connection::Status newStatus)
 						{
 							se::log::info("Client: connection status changed: " + se::toString(int(oldStatus)) + "->" + std::to_string(int(newStatus)));
@@ -157,7 +164,6 @@ int main()
 			inifile.update();
 			consoleVisualizer.update(deltaTimeSystem.deltaTime);
 			connectionManager.update();
-			connectionProfiler.update();
 			scopeProfilerVisualizer.update(deltaTimeSystem.deltaTime);
 			if (inputManager.isKeyPressed(unsigned(se::input::Key::BACKSPACE)))
 			{
@@ -170,6 +176,7 @@ int main()
 
 			//Render
 			window.renderBegin();
+			imGuiBackendWrapper.render();
 			consoleVisualizer.render();
 			batchManager2D.render();
 			window.renderEnd();
@@ -207,7 +214,6 @@ int main()
 				connection = connectionManager.startConnecting(serverEndpoint);
 				if (connection)
 				{
-					connectionProfiler.addConnection(connection);
 					connection->connectToStatusChangedSignal(connectionStatusChangedConnection, [&connection, receiveHandler](const se::net::Connection::Status oldStatus, const se::net::Connection::Status newStatus)
 						{
 							se::log::info("Client: connection status changed: " + se::toString(int(oldStatus)) + "->" + std::to_string(int(newStatus)));
@@ -232,7 +238,6 @@ int main()
 			inifile.update();
 			consoleVisualizer.update(deltaTimeSystem.deltaTime);
 			connectionManager.update();
-			connectionProfiler.update();
 			scopeProfilerVisualizer.update(deltaTimeSystem.deltaTime);
 			if (inputManager.isKeyPressed(unsigned(se::input::Key::BACKSPACE)))
 			{
@@ -245,6 +250,7 @@ int main()
 
 			//Render
 			window.renderBegin();
+			imGuiBackendWrapper.render();
 			consoleVisualizer.render();
 			batchManager2D.render();
 			window.renderEnd();
