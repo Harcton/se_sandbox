@@ -106,8 +106,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TEMP", "TEMP\TEMP.vcxproj",
 		{CE4F0DDF-B21D-4E85-961E-5DE4F41FFEB8} = {CE4F0DDF-B21D-4E85-961E-5DE4F41FFEB8}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Net_Share", "..\SpehsEngine\SpehsEngine\Net\Net_Share.vcxitems", "{1E65A9FA-C973-42FE-AA97-CD08C94E9BB4}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\SpehsEngine\SpehsEngine\Net\Net_Share.vcxitems*{1e65a9fa-c973-42fe-aa97-cd08c94e9bb4}*SharedItemsImports = 9
 		..\SpehsEngine\SpehsEngine\Core\CoreShare.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
 		..\SpehsEngine\SpehsEngine\Core\CoreShare.vcxitems*{cbb134b8-c9fe-4129-a6dd-58b94cbe1096}*SharedItemsImports = 4
 		..\SpehsEngine\SpehsEngine\Net\Net_Share.vcxitems*{cdaef09b-dc58-42c8-81b8-83c3e5d8145e}*SharedItemsImports = 4

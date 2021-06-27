@@ -17,7 +17,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)/bin/;$(SolutionDir)/Dependencies/lib/;$(SPEHSENGINE_ROOT)/Dependencies/lib/$(Platform)/;$(SPEHSENGINE_ROOT)/Dependencies/lib/$(Platform)/$(Configuration)/;$(SPEHSENGINE_ROOT)/bin/$(Platform)/$(Configuration)/$(PlatformToolset)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SpehsAudio.lib;SpehsCore.lib;SpehsMath.lib;SpehsPhysics.lib;SpehsInput.lib;SpehsImgui.lib;SpehsRendering.lib;SpehsGUI.lib;SpehsNet.lib;SpehsDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GameNetworkingSockets_s.lib;SpehsAudio.lib;SpehsCore.lib;SpehsMath.lib;SpehsPhysics.lib;SpehsInput.lib;SpehsImgui.lib;SpehsRendering.lib;SpehsGUI.lib;SpehsNet.lib;SpehsDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

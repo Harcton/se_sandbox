@@ -12,6 +12,7 @@
 #include "SpehsEngine/Net/ConnectionManager.h"
 #include "SpehsEngine/Net/IOService.h"
 #include "SpehsEngine/Net/AddressUtilityFunctions.h"
+#include "SpehsEngine/Net/ConnectionManager2.h"
 #include "SpehsEngine/Rendering/RenderingLib.h"
 #include "SpehsEngine/Rendering/Camera2D.h"
 #include "SpehsEngine/Rendering/ConsoleVisualizer.h"
@@ -44,6 +45,24 @@ int main()
 	se::InputLib input(rendering);
 	se::GUILib gui(input, audio);
 	se::debug::DebugLib debug(gui);
+
+	se::net::ConnectionManager2 connectionManager2("client");
+	std::shared_ptr<se::net::Connection2> connection2 = connectionManager2.connect(se::net::Endpoint(se::net::Address("192.168.100.41"), se::net::Port(41623)));
+	if (connection2)
+	{
+		connection2->setReceiveHandler([](se::ReadBuffer& readBuffer, const bool reliable)
+			{
+				se::log::info("Received handler");
+			});
+		while (true)
+		{
+			connectionManager2.update();
+		}
+	}
+	else
+	{
+		se::log::error("Failed to connect");
+	}
 
 	se::Inifile inifile("netclient");
 	se::Inivar<unsigned>& windowWidth = inifile.get("video", "window_width", 800u);

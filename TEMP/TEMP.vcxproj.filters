@@ -21,9 +21,21 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trivial_signaling_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_common.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trivial_signaling_client.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

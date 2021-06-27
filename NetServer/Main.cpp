@@ -13,6 +13,7 @@
 #include "SpehsEngine/Net/ConnectionManager.h"
 #include "SpehsEngine/Net/IOService.h"
 #include "SpehsEngine/Net/AddressUtilityFunctions.h"
+#include "SpehsEngine/Net/ConnectionManager2.h"
 #include "SpehsEngine/Rendering/RenderingLib.h"
 #include "SpehsEngine/Rendering/Camera2D.h"
 #include "SpehsEngine/Rendering/ConsoleVisualizer.h"
@@ -46,6 +47,19 @@ int main()
 	se::InputLib input(rendering);
 	se::GUILib gui(input, audio);
 	se::debug::DebugLib debug(gui);
+
+	se::net::ConnectionManager2 connectionManager2("server");
+	connectionManager2.startListening(41623);
+	boost::signals2::scoped_connection incomingConnectionScopedConnection;
+	std::vector<std::shared_ptr<se::net::Connection2>> connections;
+	connectionManager2.connectToIncomingConnectionSignal(incomingConnectionScopedConnection, [&connections](std::shared_ptr<se::net::Connection2>& connection)
+		{
+			connections.push_back(connection);
+		});
+	while (true)
+	{
+		connectionManager2.update();
+	}
 
 	se::Inifile inifile("netserver");
 	inifile.read();
